@@ -1,0 +1,17 @@
+name = "FeatureNet"
+uuid = "c9a00e29-6f0d-41e6-877d-8a30967e740d"
+authors = ["Robert Zietal <r.zietal@fugro.com>"]
+version = "0.1.0"
+
+[deps]
+HDF5 = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
+JLD = "4138dd39-2aa7-5051-a626-17a0bb65d9c8"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+NearestNeighbors = "b8a86587-4115-5ab1-83bc-aa920d37bbce"
+ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
+RoamesGeometry = "7182eba8-869d-4e5d-8801-8896391ab281"
+SplitApplyCombine = "03a91e81-4c3e-53e1-a0a4-9c0c8f19dd66"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+TypedTables = "9d95f2ec-7b3d-5a63-8d20-e2491e220bb9"
