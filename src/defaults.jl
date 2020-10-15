@@ -22,3 +22,25 @@ function Base.zero(::Type{SpatialFeature})
     N4 = SVector(n,n,n,n)
     SpatialFeature(Int64(0), n, n, n, n, n, n, n, N7, N7, N4)
 end
+
+function spatialfeature_to_array(feature)
+
+    f = [feature.num_points, feature.linearity, feature.planarity, feature.sphericity, 
+         feature.verticality, feature.entropy, feature.log_intensity_μ, feature.log_intensity_σ²] 
+
+    for x in feature.return_number_hist
+        push!(f,x)
+    end
+    for x in feature.num_returns_hist
+        push!(f,x)
+    end
+    for x in feature.agl_hist
+        push!(f,x)
+    end
+
+    if maximum(isnan.(f)) == 1
+        return nothing
+    else
+        return f
+    end
+end

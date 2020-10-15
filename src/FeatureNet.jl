@@ -1,20 +1,31 @@
 module FeatureNet
 
 using RoamesGeometry
-using HDF5
-using JLD
+using Serialization
 using NearestNeighbors
 using SplitApplyCombine
 using StaticArrays
 using Statistics
+using Random
 using LinearAlgebra
 using StatsBase
 using TypedTables
 using ProgressMeter
+using StatsBase
+using Serialization
+
+using Flux, Statistics
+using Flux.Data: DataLoader
+using Flux: onehotbatch, onecold, logitcrossentropy
+using Base.Iterators: repeated
+using Parameters: @with_kw
+using CUDAapi
 
 include("defaults.jl")
 include("getfeatures.jl")
+include("dataloader.jl")
+include("train.jl")
 
-export generate_features, save_features
+export generate_features, save_features, load_features, initialize_dataset, grab_random_files, load_files, train
 
 end # module

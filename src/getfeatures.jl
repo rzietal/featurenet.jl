@@ -114,24 +114,106 @@ function generate_point_features(pc, i::Int, radii::Array, kdtree::KDTree, weigh
     return result
 end
 
-function save_features(features, filename::String)
 
-    num_features = length(features)
+function load_features(filename::String)
 
-    selected_features = Dict{String, Any}()
+    data = deserialize(filename)
+    labels = data["labels"]
+    features = data["features"]
 
-    for key in keys(features[1])
-        selected_features["radius_$(key)"] = Any[]
-    end
+    return features, labels
 
-    @showprogress 1 "Reformatting and saving features..." for i=1:num_features
+end
+
+
+
+function save_features(features, classification, filename::String, num_features::Int)
+
+    num_features_total = length(features)
+    selected_features = []
+
+    @info "Balancing out the labels..."
+    features, classification = feature_data_fillings_duplicate(features, classification, num_features)
+    @info "Randomizing and selecting $num_features samples..."
+    features, classification, counter = feature_randomise_subsample(features, classification, num_features)
+
+    @showprogress 1 "Reformatting and saving..." for i=1:length(features)
         for (key, value) in features[i]
-            push!(selected_features["radius_$(key)"], value)
+            line = spatialfeature_to_array(value)
+            if !isnothing(line)
+                for l in line
+                    push!(selected_features, l)
+                end
+            end
         end
     end
 
-    save(filename, selected_features)
+    selected_features = reshape(selected_features, :, length(features))
+    selected_features = transpose(selected_features)
+    @show size(selected_features)
+
+    data = Dict{String, Any}()
+
+    data["features"] = selected_features
+    data["labels"] = classification
+
+    @info "Done selecting $(num_features) points"
+
+    serialize(filename, data)
 
     return isfile(filename)
 
+end
+
+
+function feature_data_fillings_duplicate(features::Array, labels::Array, sample_limit::Int)
+    num_of_points = length(labels)
+    indices_per_label = group(labels, 1:num_of_points)
+
+    sample_limit = round(Int, sample_limit)
+
+    new_indices_per_label = map(i -> repeat_collect(i, sample_limit), collect(indices_per_label))
+    
+    new_indices = collect(Iterators.flatten(new_indices_per_label))
+
+    return features[new_indices], labels[new_indices]    
+end
+
+function repeat_collect(array, min_size)
+    if (length(array) >= min_size) || (length(array) == 0)
+        return array
+    else
+        # some iterator magic to repeat the array infinitely, then take the wanted amount
+        iterator = Iterators.flatten(Iterators.repeated(array, typemax(Int)))
+        return collect(Iterators.take(iterator, min_size))
+    end
+end
+
+function feature_randomise_subsample(features::Array, classification::Array, sample_limit::Int)
+
+    # Randomise the point cloud so the subset of training samples 
+    # will not be from the same cluster/spot/region of the point cloud
+    num_of_points = length(classification)
+
+    # group indices by label:
+    rng = MersenneTwister(num_of_points)
+    indices_per_label = collect(group(classification, 1:num_of_points))
+    
+    # take shuffled subsets:
+    indices_per_label = map(i -> shuffle(rng, i), indices_per_label)
+    subsets = map(i -> i[1:min(sample_limit, length(i))], indices_per_label)
+
+    # and merge all those indices:
+    point_indices = collect(Iterators.flatten(subsets))
+
+    # select that data:
+    new_labels = classification[point_indices]
+    new_features = features[point_indices]
+
+    # count and return as Dict{Any,Any}
+    counts = groupcount(new_labels)
+    unique_labels = collect(keys(counts))
+    counter = Dict{Any,Any}( map(l -> l => counts[l], unique_labels))
+
+    return new_features, new_labels, counter
 end
