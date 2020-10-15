@@ -138,18 +138,19 @@ function save_features(features, classification, filename::String, num_features:
         @info "Randomizing and selecting $num_features samples..."
         features, classification, counter = feature_randomise_subsample(features, classification, num_features)
     end
+     
+    dict_keys = sort(collect(keys(features[1])))
 
     @showprogress 1 "Reformatting and saving..." for i=1:length(features)
-        for (key, value) in features[i]
-
-            line = spatialfeature_to_array(value)
+        for r in dict_keys
+            value = features[i]
+            line = spatialfeature_to_array(value[r])
             if !isnothing(line)
                 for l in line
                     push!(selected_features, l)
                 end
             end
         end
-        println(" ")
     end
     
     selected_features = reshape(selected_features, :, length(features))
