@@ -23,7 +23,7 @@ function train(train_dir, test_dir, nepochs, numfiles, batchsize, lr)
     
     #initialize datasets
     train_dataset = initialize_dataset("train"; data_dir = train_dir)
-    test_dataset = initialize_dataset("train"; data_dir = test_dir)
+    test_dataset = initialize_dataset("test"; data_dir = test_dir)
 
     # Construct model
     m = build_model()
