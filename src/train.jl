@@ -74,17 +74,14 @@ function train(train_dir, test_dir, nepochs, numfiles, batchsize, lr, model_dir)
 
         #re-initialize dataset after all files processed
         train_dataset = initialize_dataset("train"; data_dir = train_dir)
-
-        train_accuracy = accuracy(train_data, m)
-        test_accuracy = accuracy(train_data, m)
+        test_accuracy = accuracy(test_data, m)
         #print out accuracies
         @info "Epoch $(i)"
-        @info "Accuracy on a training set $(train_accuracy)"
         @info "Accuracy on a testing set $(test_accuracy)"
 
         acc = string(test_accuracy)[1:6]
 
-        serialize(joinpath(model_dir,"model_epoch_$(i)_accuracy_.$(acc).jld"), m)
+        serialize(joinpath(model_dir,"model_epoch_$(i)_accuracy_.$(acc).jls"), m)
     end
 
     
