@@ -12,6 +12,9 @@ function getdata(batchsize)
 
     @show size(xtest)
     @show size(ytest)
+
+    @show typeof(xtest)
+    @show typeof(ytest)
 	
     # Reshape Data in order to flatten each image into a linear array
     #xtrain = Flux.flatten(xtrain)

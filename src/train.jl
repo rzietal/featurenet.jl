@@ -7,13 +7,8 @@ end
 
 function build_model(; nfeatures=78, nclasses=5)
     return Chain(
-             Dense(nfeatures, 2*nfeatures),
-             Dense(2*nfeatures, 3*nfeatures, relu),
-             Dense(3*nfeatures, 4*nfeatures, relu),
-             Dense(4*nfeatures, 3*nfeatures, relu),
-             Dense(3*nfeatures, 2*nfeatures, relu),
-             Dense(2*nfeatures, nfeatures, relu),
-            Dense(Int(round(nfeatures/2)), nclasses))
+            Dense(nfeatures, 26, relu),
+            Dense(26, nclasses))
 end
 
 function accuracy(data_loader, model)
@@ -52,9 +47,9 @@ function train(train_dir, test_dir, nepochs, numfiles, batchsize, lr)
             # Load training data 
             train_batch = grab_random_files(train_dataset, numfiles)
             xtrain, ytrain = load_files(train_batch)
+
             ytrain = onehotbatch(ytrain, 0:4)
             train_data = DataLoader(xtrain, ytrain, batchsize=batchsize)
-            
             train_data = gpu.(train_data)
             test_data = gpu.(test_data)
 

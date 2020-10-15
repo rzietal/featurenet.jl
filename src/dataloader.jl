@@ -61,6 +61,9 @@ function load_files(files::Array)
         labels = vcat(labels, l)
     end
 
-    return data', labels
+    data = data'
+    data = convert(Array{}, data)
+
+    return data, labels
 
 end

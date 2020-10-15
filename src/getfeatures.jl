@@ -149,7 +149,7 @@ function save_features(features, classification, filename::String, num_features:
     end
 
     selected_features = reshape(selected_features, :, length(features))
-    selected_features = transpose(selected_features)
+    selected_features = convert(Array, transpose(selected_features))
     @show size(selected_features)
 
     data = Dict{String, Any}()
