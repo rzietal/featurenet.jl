@@ -5,7 +5,7 @@ if has_cuda()		# Check if CUDA is available
     CuArrays.allowscalar(false)
 end
 
-function build_model(; nfeatures, nclasses=5)
+function build_model(; nfeatures=78, nclasses=5)
     return Chain(
              Dense(nfeatures, 2*nfeatures),
              Dense(2*nfeatures, 3*nfeatures, relu),
