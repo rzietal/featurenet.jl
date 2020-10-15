@@ -127,18 +127,21 @@ end
 
 
 
-function save_features(features, classification, filename::String, num_features::Int)
+function save_features(features, classification, filename::String, num_features::Union{Int, Nothing})
 
     num_features_total = length(features)
     selected_features = []
 
-    @info "Balancing out the labels..."
-    features, classification = feature_data_fillings_duplicate(features, classification, num_features)
-    @info "Randomizing and selecting $num_features samples..."
-    features, classification, counter = feature_randomise_subsample(features, classification, num_features)
+    if !isnothing(num_features)
+        @info "Balancing out the labels..."
+        features, classification = feature_data_fillings_duplicate(features, classification, num_features)
+        @info "Randomizing and selecting $num_features samples..."
+        features, classification, counter = feature_randomise_subsample(features, classification, num_features)
+    end
 
     @showprogress 1 "Reformatting and saving..." for i=1:length(features)
         for (key, value) in features[i]
+
             line = spatialfeature_to_array(value)
             if !isnothing(line)
                 for l in line
@@ -146,8 +149,9 @@ function save_features(features, classification, filename::String, num_features:
                 end
             end
         end
+        println(" ")
     end
-
+    
     selected_features = reshape(selected_features, :, length(features))
     selected_features = convert(Array, transpose(selected_features))
     @show size(selected_features)
@@ -157,7 +161,7 @@ function save_features(features, classification, filename::String, num_features:
     data["features"] = selected_features
     data["labels"] = classification
 
-    @info "Done selecting $(num_features) points"
+    @info "Done selecting $(length(classification)) points"
 
     serialize(filename, data)
 

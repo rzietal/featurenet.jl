@@ -30,7 +30,7 @@ function loss_all(dataloader, model)
     l/length(dataloader)
 end
 
-function train(train_dir, test_dir, nepochs, numfiles, batchsize, lr)
+function train(train_dir, test_dir, nepochs, numfiles, batchsize, lr, model_dir)
     
     #initialize datasets
     train_dataset = initialize_dataset("train"; data_dir = train_dir)
@@ -69,12 +69,24 @@ function train(train_dir, test_dir, nepochs, numfiles, batchsize, lr)
 
             Flux.train!(loss, params(m), train_data, opt, cb = evalcb)
 
-            @show accuracy(train_data, m)
-            @show accuracy(test_data, m)
+            
         end
 
         #re-initialize dataset after all files processed
         train_dataset = initialize_dataset("train"; data_dir = train_dir)
+
+        train_accuracy = accuracy(train_data, m)
+        test_accuracy = accuracy(train_data, m)
+        #print out accuracies
+        @info "Epoch $(i)"
+        @info "Accuracy on a training set $(train_accuracy)"
+        @info "Accuracy on a testing set $(test_accuracy)"
+
+        acc = string(test_accuracy)[1:6]
+
+        serialize(joinpath(model_dir,"model_epoch_$(i)_accuracy_.$(acc).jld"), m)
     end
+
+    
 
 end

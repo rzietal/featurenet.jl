@@ -14,7 +14,7 @@ using ProgressMeter
 using StatsBase
 using Serialization
 
-using Flux, Statistics
+using Flux
 using Flux.Data: DataLoader
 using Flux: onehotbatch, onecold, logitcrossentropy
 using Base.Iterators: repeated
