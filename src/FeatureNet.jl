@@ -25,7 +25,8 @@ include("defaults.jl")
 include("getfeatures.jl")
 include("dataloader.jl")
 include("train.jl")
+include("predict.jl")
 
-export generate_features, save_features, load_features, initialize_dataset, grab_random_files, load_files, train
+export generate_features, save_features, load_features, initialize_dataset, grab_random_files, load_files, train, classify
 
 end # module
