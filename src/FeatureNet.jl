@@ -20,6 +20,7 @@ using Flux: onehotbatch, onecold, logitcrossentropy
 using Base.Iterators: repeated
 using Parameters: @with_kw
 using CUDAapi
+using CUDA
 
 include("defaults.jl")
 include("getfeatures.jl")

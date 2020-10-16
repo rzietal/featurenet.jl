@@ -1,9 +1,9 @@
 
-if has_cuda()		# Check if CUDA is available
-    @info "CUDA is on"
-    import CuArrays		# If CUDA is available, import CuArrays
-    CuArrays.allowscalar(false)
-end
+# if has_cuda()		# Check if CUDA is available
+#     @info "CUDA is on"
+#     #import CuArrays		# If CUDA is available, import CuArrays
+#     #CuArrays.allowscalar(false)
+# end
 
 function build_model(; nfeatures=78, nclasses=5)
     return Chain(
@@ -43,15 +43,18 @@ function train(train_dir, test_dir, nepochs, numfiles, batchsize, lr, model_dir)
     # Define loss
     loss(x,y) = logitcrossentropy(m(x), y)
 
-    opt = ADAM(lr)
-
     # Load testing data 
     test_batch = grab_random_files(test_dataset, 1; drop_processed = false)
     xtest, ytest = load_files(test_batch)
+    xtest = convert(Array{Float64}, xtest)
     ytest = onehotbatch(ytest, 0:4)
-    test_data = DataLoader(xtest, ytest, batchsize=batchsize)
+    ytest = convert(Array{Int8}, ytest)
+
+    test_data = DataLoader(xtest |> gpu, ytest |> gpu, batchsize=batchsize) |> gpu
 
     evalcb = () -> @show(loss_all(test_data, m))
+
+    opt = ADAM(lr)
 
     for i = 1:nepochs
 
@@ -60,16 +63,16 @@ function train(train_dir, test_dir, nepochs, numfiles, batchsize, lr, model_dir)
             # Load training data 
             train_batch = grab_random_files(train_dataset, numfiles)
             xtrain, ytrain = load_files(train_batch)
+            xtrain = convert(Array{Float64}, xtrain)
 
             ytrain = onehotbatch(ytrain, 0:4)
-            train_data = DataLoader(xtrain, ytrain, batchsize=batchsize, shuffle=true)
+            ytrain = convert(Array{Int8}, ytrain)
 
-            train_data = gpu.(train_data)
-            test_data = gpu.(test_data)
+            train_data = DataLoader(xtrain |> gpu, ytrain |> gpu, batchsize=batchsize, shuffle=true) |> gpu
 
+            @info "Training..."
             Flux.train!(loss, params(m), train_data, opt, cb = evalcb)
 
-            
         end
 
         #re-initialize dataset after all files processed
