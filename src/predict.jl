@@ -1,11 +1,13 @@
 function classify(filename::String, model::String)
 
-    m = deserialize(model)
-    m = gpu(m)
+    m = deserialize(model) |> cpu
+
+    @show typeof(m)
 
     x, y = load_files([filename])
-
-    @show size(x)
+    x = convert(Array{Float64}, x)
+    
+    @show typeof(x)
 
     probs = softmax(m(x))
 
