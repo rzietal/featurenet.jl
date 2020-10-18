@@ -23,7 +23,7 @@ function loss_all(dataloader, model)
     l/length(dataloader)
 end
 
-function train(train_dir, test_dir, nepochs, numfiles, batchsize, lr, model_dir)
+function train(train_dir, test_dir, nepochs, numfiles, batchsize, lr, lr_drop_rate, lr_step, model_dir)
     
     #initialize datasets
     train_dataset = initialize_dataset("train"; data_dir = train_dir)
@@ -50,7 +50,10 @@ function train(train_dir, test_dir, nepochs, numfiles, batchsize, lr, model_dir)
     opt = ADAM(lr)
 
     for i = 1:nepochs
-
+        if i % lr_step == 0
+            opt.eta = maximum([1e-6, opt.eta*lr_drop_rate])
+            @info "New learning rate $(opt.eta)"
+        end
         while train_dataset.num_files > 0
 
             # Load training data 
@@ -72,12 +75,12 @@ function train(train_dir, test_dir, nepochs, numfiles, batchsize, lr, model_dir)
         train_dataset = initialize_dataset("train"; data_dir = train_dir)
         test_accuracy = accuracy(test_data, m)
         #print out accuracies
-        @info "Epoch $(i)"
         @info "Accuracy on a testing set $(test_accuracy)"
 
-        acc = string(test_accuracy)[1:6]
+        acc = string(test_accuracy)
+        acc = acc[1:min(6,length(acc))]
 
-        serialize(joinpath(model_dir,"model_epoch_$(i)_accuracy_.$(acc).jls"), m)
+        serialize(joinpath(model_dir,"model_epoch_$(i)_accuracy_$(acc).jls"), m)
     end
 
     

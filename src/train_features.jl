@@ -67,7 +67,8 @@ function train_features(train_dir, test_dir, nepochs, numfiles, batchsize, lr, l
         @info "Epoch $(i)"
         @info "MSE on a testing set $(test_accuracy)"
 
-        acc = string(test_accuracy)[1:8]
+        acc = string(test_accuracy)
+        acc = acc[1:min(8,length(acc))]
 
         serialize(joinpath(model_dir,"model_epoch_$(i)_MSE_$(acc).jls"), m)
     end
