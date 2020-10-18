@@ -16,7 +16,7 @@ using Serialization
 
 using Flux
 using Flux.Data: DataLoader
-using Flux: onehotbatch, onecold, logitcrossentropy
+using Flux: onehotbatch, onecold, logitcrossentropy, mse
 using Base.Iterators: repeated
 using Parameters: @with_kw
 using CUDAapi
@@ -26,8 +26,9 @@ include("defaults.jl")
 include("getfeatures.jl")
 include("dataloader.jl")
 include("train.jl")
+include("train_features.jl")
 include("predict.jl")
 
-export generate_features, save_features, load_features, initialize_dataset, grab_random_files, load_files, train, classify
+export generate_features, save_features, load_features, initialize_dataset, grab_random_files, load_files, train, train_features, classify
 
 end # module

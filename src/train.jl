@@ -1,10 +1,3 @@
-
-# if has_cuda()		# Check if CUDA is available
-#     @info "CUDA is on"
-#     #import CuArrays		# If CUDA is available, import CuArrays
-#     #CuArrays.allowscalar(false)
-# end
-
 function build_model(; nfeatures=78, nclasses=5)
     return Chain(
             Dense(nfeatures, 52),
