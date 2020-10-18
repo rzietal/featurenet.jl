@@ -15,7 +15,7 @@ function loss_all_features(dataloader, model)
     l/length(dataloader)
 end
 
-function train_features(train_dir, test_dir, nepochs, numfiles, batchsize, lr, model_dir)
+function train_features(train_dir, test_dir, nepochs, numfiles, batchsize, lr, lr_drop_rate, lr_step, model_dir)
     
     #initialize datasets
     train_dataset = initialize_dataset("train"; data_dir = train_dir)
@@ -41,7 +41,10 @@ function train_features(train_dir, test_dir, nepochs, numfiles, batchsize, lr, m
     opt = ADAM(lr)
 
     for i = 1:nepochs
-
+        if i % lr_step == 0
+            opt.eta = maximum([1e-6, opt.eta*lr_drop_rate])
+            @info "New learning rate $(opt.eta)"
+        end
         while train_dataset.num_files > 0
 
             # Load training data 
@@ -64,9 +67,9 @@ function train_features(train_dir, test_dir, nepochs, numfiles, batchsize, lr, m
         @info "Epoch $(i)"
         @info "MSE on a testing set $(test_accuracy)"
 
-        acc = string(test_accuracy)[1:6]
+        acc = string(test_accuracy)[1:8]
 
-        serialize(joinpath(model_dir,"model_epoch_$(i)_MSE_.$(acc).jls"), m)
+        serialize(joinpath(model_dir,"model_epoch_$(i)_MSE_$(acc).jls"), m)
     end
 
     
