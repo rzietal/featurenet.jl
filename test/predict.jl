@@ -1,11 +1,16 @@
 using RoamesGeometry
 using FeatureNet
 
-pointcloud = "/home/rzietal/git/featurenet.jl/testdata/test.las"
+# pointcloud = "/home/rzietal/git/featurenet.jl/testdata/test.las"
+# classified_pointcloud = "/home/rzietal/git/featurenet.jl/testdata/classified_test.las"
+# model = "/home/rzietal/git/featurenet.jl/testdata/models/model_epoch_98_accuracy_.0.9313.jls"
+# filename = "/home/rzietal/git/featurenet.jl/testdata/test.jls"
 
-classified_pointcloud = "/home/rzietal/git/featurenet.jl/testdata/classified_test.las"
-model = "/home/rzietal/git/featurenet.jl/testdata/models/model_epoch_98_accuracy_.0.9313.jls"
-filename = "/home/rzietal/git/featurenet.jl/testdata/test.jls"
+pointcloud = "D:\\Projects\\featurenet.jl\\testdata\\test.las"
+classified_pointcloud = "D:\\Projects\\featurenet.jl\\testdata\\classified_test.las"
+model = "D:\\Projects\\featurenet.jl\\testdata\\models\\model_epoch_201_accuracy_.0.9691.jls"
+filename = "D:\\Projects\\featurenet.jl\\testdata\\test.jls"
+
 
 labels = classify(filename, model)
 

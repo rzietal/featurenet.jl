@@ -1,2 +1,2 @@
 testdata/
-Manifest.toml
+*.toml
