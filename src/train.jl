@@ -1,15 +1,20 @@
-function build_model(; nfeatures=featurelength*3, nclasses=nclasses)
+function build_model(; nfeatures=featurelength*3, nclasses=nclasses, p = 0.5)
     return Chain(
             Dense(nfeatures, nfeatures),
             BatchNorm(nfeatures, relu),
+            Dropout(p),
             Dense(nfeatures, nfeatures),
             BatchNorm(nfeatures, relu),
+            Dropout(p),
             Dense(nfeatures, nfeatures),
             BatchNorm(nfeatures, relu),
+            Dropout(p),
             Dense(nfeatures, nfeatures),
             BatchNorm(nfeatures, relu),
+            Dropout(p),
             Dense(nfeatures, nfeatures),
             BatchNorm(nfeatures, relu),
+            Dropout(p),
             Dense(nfeatures, 56),
             BatchNorm(56, relu),
             Dense(56, 28),
@@ -50,7 +55,7 @@ end
 
 function get_weights(y)
 
-    @show counts = length.(group(Int.(y)))
+    counts = length.(group(Int.(y)))
     weights = ones(nclasses)
     for i=0:nclasses-1
         weights[i+1] = counts[i]
