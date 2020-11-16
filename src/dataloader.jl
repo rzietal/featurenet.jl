@@ -64,6 +64,9 @@ function load_files(files::Array)
     data = data'
     data = convert(Array{}, data)
 
+    @show size(data)
+    @show size(labels)
+
     return data, labels
 
 end

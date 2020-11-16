@@ -14,7 +14,7 @@ function generate_features(pc, radii::Array, weight::Function=x->one(typeof(x)))
     return features, pc.classification
 end
 
-function generate_point_features(pc, i::Int, radii::Array, kdtree::KDTree, weight::Function=x->one(typeof(x)))
+function generate_point_features(pc, ii::Int, radii::Array, kdtree::KDTree, weight::Function=x->one(typeof(x)))
     
     result = Dict{Int, SpatialFeature}()
     position = pc.position
@@ -26,7 +26,7 @@ function generate_point_features(pc, i::Int, radii::Array, kdtree::KDTree, weigh
     intensity = pc.intensity
     agl = pc.agl
 
-    point = position[i]
+    point = position[ii]
 
     for radius in radii
         neighboursidx =  inrange(kdtree, point, radius)
@@ -96,9 +96,11 @@ function generate_point_features(pc, i::Int, radii::Array, kdtree::KDTree, weigh
         feature.entropy = entropy
         feature.log_intensity_μ = logintensityμ
         feature.log_intensity_σ² = logintensityσ²
-
+        feature.return_number = Int8(return_number[ii])
+        feature.num_returns = Int8(num_returns[ii]) 
+        
         nn_agl = agl[neighboursidx]
-        feature.agl_hist = [minimum(nn_agl),median(nn_agl), agl[i], maximum(nn_agl)]
+        feature.agl_hist = [minimum(nn_agl),median(nn_agl), agl[ii], maximum(nn_agl)]
 
         nn_returnnumber = return_number[neighboursidx]
         return_number_hist = map(v -> count(x->x==v,nn_returnnumber), uretnum)
@@ -131,6 +133,7 @@ function save_features(features, classification, filename::String, num_features:
 
     num_features_total = length(features)
     selected_features = []
+    selected_classifications = []
 
     if !isnothing(num_features)
         @info "Balancing out the labels..."
@@ -138,31 +141,61 @@ function save_features(features, classification, filename::String, num_features:
         @info "Randomizing and selecting $num_features samples..."
         features, classification, counter = feature_randomise_subsample(features, classification, num_features)
     end
-     
     dict_keys = sort(collect(keys(features[1])))
 
+    NaNcount = 0
     @showprogress 1 "Reformatting and saving..." for i=1:length(features)
-        for r in dict_keys
-            value = features[i]
-            line = spatialfeature_to_array(value[r])
-            if !isnothing(line)
-                for l in line
-                    push!(selected_features, l)
+        value = features[i]
+        line1 = spatialfeature_to_array(value[dict_keys[1]])
+        line2 = spatialfeature_to_array(value[dict_keys[2]])
+        line3 = spatialfeature_to_array(value[dict_keys[3]])
+
+        if isnothing(line1) || isnothing(line2) || isnothing(line3)
+            display(hcat(line1,line2,line3))
+        end
+            
+        if isnothing(num_features) # if no duplication then output all the features, even with NaNs etc...
+            for l1 in line1
+                push!(selected_features, l1)
+            end
+            for l2 in line2
+                push!(selected_features, l2)
+            end
+            for l3 in line3
+                push!(selected_features, l3)
+            end
+        else # if duplicating for training skip the NaNs
+            if !isnothing(line1) && !isnothing(line2) && !isnothing(line3) 
+                for l1 in line1
+                    push!(selected_features, l1)
                 end
+                for l2 in line2
+                    push!(selected_features, l2)
+                end
+                for l3 in line3
+                    push!(selected_features, l3)
+                end
+                push!(selected_classifications, classification[i])
+            else
+                NaNcount = NaNcount + 1
+                display(hcat(line1,line2,line3))
             end
         end
     end
-    
-    selected_features = reshape(selected_features, :, length(features))
+
+    selected_features = reshape(selected_features, featurelength*3, :)
     selected_features = convert(Array, transpose(selected_features))
-    @show size(selected_features)
-
     data = Dict{String, Any}()
-
     data["features"] = selected_features
+
+    if !isnothing(num_features)
+        classification = selected_classifications
+    end
+    
     data["labels"] = classification
 
-    @info "Done selecting $(length(classification)) points"
+    @info "Done selecting $(length(classification)) points."
+    @info "Encountered $(NaNcount) invalid values."
 
     serialize(filename, data)
 

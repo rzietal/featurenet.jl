@@ -6,7 +6,7 @@ pc = load_pointcloud("testdata/test.las")
 # for now just pulling AGL out of Z
 pc = map(v -> merge(v,(agl = v.position[3],)),pc)
 
-radii = [5,7,10]
+radii = [1,2,3]
 
 features, classification = generate_features(pc, radii)
 success = save_features(features, classification, "testdata/test_duplicated.jls", 10000)
