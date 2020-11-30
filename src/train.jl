@@ -1,27 +1,34 @@
 function build_model(; nfeatures=featurelength*3, nclasses=nclasses, p = 0.5)
     return Chain(
-            Dense(nfeatures, nfeatures),
-            BatchNorm(nfeatures, relu),
+            Dense(nfeatures, nfeatures, selu),
+            BatchNorm(nfeatures),
+            Dense(nfeatures, nfeatures, selu),
+            BatchNorm(nfeatures),
+            Dense(nfeatures, nfeatures, selu),
+            BatchNorm(nfeatures),
+            Dense(nfeatures, nfeatures, selu),
+            BatchNorm(nfeatures),
+            Dense(nfeatures, nfeatures, selu),
+            BatchNorm(nfeatures),
+            Dense(nfeatures, nfeatures, selu),
+            BatchNorm(nfeatures),
+            Dense(nfeatures, nfeatures, selu),
+            BatchNorm(nfeatures),
+            Dense(nfeatures, nfeatures, selu),
+            BatchNorm(nfeatures),
+            Dense(nfeatures, nfeatures, selu),
+            BatchNorm(nfeatures),
+            Dense(nfeatures, nfeatures, selu),
+            BatchNorm(nfeatures),
+            Dense(nfeatures, nfeatures, selu),
+            BatchNorm(nfeatures),
             Dropout(p),
-            Dense(nfeatures, nfeatures),
-            BatchNorm(nfeatures, relu),
-            Dropout(p),
-            Dense(nfeatures, nfeatures),
-            BatchNorm(nfeatures, relu),
-            Dropout(p),
-            Dense(nfeatures, nfeatures),
-            BatchNorm(nfeatures, relu),
-            Dropout(p),
-            Dense(nfeatures, nfeatures),
-            BatchNorm(nfeatures, relu),
-            Dropout(p),
-            Dense(nfeatures, 56),
-            BatchNorm(56, relu),
-            Dense(56, 28),
-            BatchNorm(28, relu),
-            Dense(28, nclasses),
+            Dense(nfeatures, 56, selu),
+            BatchNorm(56),
+            Dense(56, 28, selu),
+            BatchNorm(28),
+            Dense(28, nclasses, selu),
             BatchNorm(nclasses),
-            softmax
             )
 end
 
@@ -55,13 +62,19 @@ end
 
 function get_weights(y)
 
-    counts = length.(group(Int.(y)))
+    @show counts = length.(group(Int.(y)))
     weights = ones(nclasses)
     for i=0:nclasses-1
-        weights[i+1] = counts[i]
+        if haskey(counts, i)
+            weights[i+1] = counts[i]
+        end
     end
-    weights = maximum(weights) .- weights
-    weights = 1000 * weights/maximum(weights) .+ 1
+    @show weights = maximum(weights) .- weights
+    if maximum(weights) != 0
+        @show weights = 1000 * weights/maximum(weights) .+ 1
+    else
+        @show weights = ones(nclasses)
+    end
 
     return weights
 end
@@ -73,11 +86,11 @@ function train(train_dir, test_dir, nepochs, numfiles, batchsize, lr, lr_drop_ra
     test_dataset = initialize_dataset("test"; data_dir = test_dir)
 
     # Construct model
-    m = build_model()
+    m = Featurenet()
     m = gpu(m)
 
     # Define loss
-    #loss(x,y) = logitcrossentropy(m(x), y)
+    loss(x,y) = logitcrossentropy(m(x), y)
     
 
     # Load testing data 
@@ -94,7 +107,7 @@ function train(train_dir, test_dir, nepochs, numfiles, batchsize, lr, lr_drop_ra
     xtrain, ytrain = load_files(train_batch)
 
     # get weights before turning into one hot
-    weights = get_weights(ytrain)
+    @show weights = get_weights(ytrain) |> gpu
 
     xtrain = convert(Array{Float64}, xtrain)
 
@@ -104,19 +117,23 @@ function train(train_dir, test_dir, nepochs, numfiles, batchsize, lr, lr_drop_ra
     train_data = DataLoader(xtrain |> gpu, ytrain |> gpu, batchsize=batchsize, shuffle=true) |> gpu
 
     # define loss
-    loss(x,y) = weighted_logitcrossentropy(m(x),y; weights = weights)
+    #loss(x,y) = weighted_logitcrossentropy(m(x),y; weights = weights)
 
-    evalcb = () -> @show(loss_all_weighted(test_data, m, weights))
-    opt = ADAM(lr)
+    #evalcb = () -> @show(loss_all_weighted(test_data, m, weights))
+    evalcb = () -> @show(loss_all(test_data, m))
+    #opt = ADAM(lr)
+    opt = RMSProp(lr)
 
     for i = 1:nepochs
         if i % lr_step == 0
-            opt.eta = maximum([1e-6, opt.eta*lr_drop_rate])
+            opt.eta = maximum([1e-4, opt.eta*lr_drop_rate])
             @info "New learning rate $(opt.eta)"
         end
         @info "Training epoch $(i)"
+        trainmode!(m)
         Flux.train!(loss, params(m), train_data, opt, cb = evalcb)
 
+        testmode!(m)
         test_accuracy = accuracy(test_data, m)
         #print out accuracies
         @info "Accuracy on a testing set $(test_accuracy)"
@@ -124,7 +141,7 @@ function train(train_dir, test_dir, nepochs, numfiles, batchsize, lr, lr_drop_ra
         acc = string(test_accuracy)
         acc = acc[1:min(6,length(acc))]
 
-        serialize(joinpath(model_dir,"model_epoch_$(i)_accuracy_$(acc).jls"), m)
+        serialize(joinpath(model_dir,"model_epoch_$(i)_accuracy_$(acc).jls"), m |> cpu)
     end
 
 end

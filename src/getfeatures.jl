@@ -8,7 +8,7 @@ function generate_features(pc, radii::Array, weight::Function=x->one(typeof(x)))
     kdtree = KDTree(pc.position)
 
     @showprogress 1 "Calculating spatial features..." for i = 1:numpoints
-        push!(features, generate_point_features(pc, i, radii, kdtree::KDTree))
+        push!(features, generate_point_features(pc, i, radii, kdtree))
     end
 
     return features, pc.classification
@@ -29,6 +29,7 @@ function generate_point_features(pc, ii::Int, radii::Array, kdtree::KDTree, weig
     point = position[ii]
 
     for radius in radii
+        # weight(x) -> exp(-x/radius^2) #exponentially decaying 
         neighboursidx =  inrange(kdtree, point, radius)
     
         # Set up our features we want to calculate
@@ -49,20 +50,24 @@ function generate_point_features(pc, ii::Int, radii::Array, kdtree::KDTree, weig
             w[i] = weight(norm(sp)^2)
             totalweight += w[i]
             mycovariance += w[i] * sp * sp'
-            logintensityμ += w[i] * log(pc.intensity[j])
+            logintensityμ += w[i] * log(1 + pc.intensity[j])
             i += 1
         end
 
-        logintensityμ = logintensityμ / totalweight
+        if totalweight !== 0
+            logintensityμ = logintensityμ / totalweight
+        end
+
 
         i = 1
         for j in neighboursidx
-            logintensityσ² += w[i] * (log(pc.intensity[j]) - logintensityμ)^2
+            logintensityσ² += w[i] * (log(1 + pc.intensity[j]) - logintensityμ)^2
             i += 1
         end
 
-        logintensityσ² = logintensityσ² / totalweight
-
+        if totalweight !== 0
+            logintensityσ² = logintensityσ² / totalweight
+        end
         # Calculate our local spatial information using PCA
         
         eig = eigen(Matrix(mycovariance))
@@ -146,14 +151,10 @@ function save_features(features, classification, filename::String, num_features:
     NaNcount = 0
     @showprogress 1 "Reformatting and saving..." for i=1:length(features)
         value = features[i]
-        line1 = spatialfeature_to_array(value[dict_keys[1]])
-        line2 = spatialfeature_to_array(value[dict_keys[2]])
-        line3 = spatialfeature_to_array(value[dict_keys[3]])
-
-        if isnothing(line1) || isnothing(line2) || isnothing(line3)
-            display(hcat(line1,line2,line3))
-        end
-            
+        line1, success1 = spatialfeature_to_array(value[dict_keys[1]])
+        line2, success2 = spatialfeature_to_array(value[dict_keys[2]])
+        line3, success3 = spatialfeature_to_array(value[dict_keys[3]])
+ 
         if isnothing(num_features) # if no duplication then output all the features, even with NaNs etc...
             for l1 in line1
                 push!(selected_features, l1)
@@ -165,7 +166,7 @@ function save_features(features, classification, filename::String, num_features:
                 push!(selected_features, l3)
             end
         else # if duplicating for training skip the NaNs
-            if !isnothing(line1) && !isnothing(line2) && !isnothing(line3) 
+            if success1 && success2 && success3 
                 for l1 in line1
                     push!(selected_features, l1)
                 end
@@ -178,7 +179,6 @@ function save_features(features, classification, filename::String, num_features:
                 push!(selected_classifications, classification[i])
             else
                 NaNcount = NaNcount + 1
-                display(hcat(line1,line2,line3))
             end
         end
     end
@@ -195,7 +195,11 @@ function save_features(features, classification, filename::String, num_features:
     data["labels"] = classification
 
     @info "Done selecting $(length(classification)) points."
-    @info "Encountered $(NaNcount) invalid values."
+    if NaNcount == 0
+        @info "Encountered $(NaNcount) invalid values."
+    else
+        @warn "Encountered $(NaNcount) invalid values."
+    end
 
     serialize(filename, data)
 

@@ -11,10 +11,10 @@ using LinearAlgebra
 using StatsBase
 using TypedTables
 using ProgressMeter
-using StatsBase
 using Serialization
 
 using Flux
+using Flux: @functor
 using Flux.Data: DataLoader
 using Flux: onehotbatch, onecold, logitcrossentropy, mse
 using Base.Iterators: repeated
@@ -25,10 +25,11 @@ using CUDA
 include("defaults.jl")
 include("getfeatures.jl")
 include("dataloader.jl")
+include("model.jl")
 include("train.jl")
 include("train_features.jl")
 include("predict.jl")
 
-export generate_features, save_features, load_features, initialize_dataset, grab_random_files, load_files, train, train_features, classify
+export generate_features, save_features, load_features, initialize_dataset, grab_random_files, load_files, train, train_features, classify, Featurenet
 
 end # module
