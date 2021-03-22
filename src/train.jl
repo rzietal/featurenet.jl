@@ -73,15 +73,16 @@ function train(train_dir, test_dir, nepochs, numfiles, batchsize, lr, lr_drop_ra
     test_dataset = initialize_dataset("test"; data_dir = test_dir)
 
     # Construct model
-    m = build_model()
+    # m = build_model()
+    m = Featurenet()
     m = gpu(m)
 
     # Define loss
-    #loss(x,y) = logitcrossentropy(m(x), y)
+    loss(x,y) = logitcrossentropy(m(x), y)
     
 
     # Load testing data 
-    test_batch = grab_random_files(test_dataset, 1; drop_processed = false)
+    test_batch = grab_random_files(test_dataset, 2; drop_processed = false)
     xtest, ytest = load_files(test_batch)
     xtest = convert(Array{Float64}, xtest)
     ytest = onehotbatch(ytest, 0:nclasses-1)
@@ -94,7 +95,7 @@ function train(train_dir, test_dir, nepochs, numfiles, batchsize, lr, lr_drop_ra
     xtrain, ytrain = load_files(train_batch)
 
     # get weights before turning into one hot
-    weights = get_weights(ytrain)
+    #weights = get_weights(ytrain)
 
     xtrain = convert(Array{Float64}, xtrain)
 
@@ -104,10 +105,10 @@ function train(train_dir, test_dir, nepochs, numfiles, batchsize, lr, lr_drop_ra
     train_data = DataLoader(xtrain |> gpu, ytrain |> gpu, batchsize=batchsize, shuffle=true) |> gpu
 
     # define loss
-    loss(x,y) = weighted_logitcrossentropy(m(x),y; weights = weights)
+    #loss(x,y) = weighted_logitcrossentropy(m(x),y; weights = weights)
 
-    evalcb = () -> @show(loss_all_weighted(test_data, m, weights))
-    opt = ADAM(lr)
+    evalcb = () -> @show(loss_all(test_data, m))
+    opt = RMSProp(lr)
 
     for i = 1:nepochs
         if i % lr_step == 0
@@ -115,8 +116,9 @@ function train(train_dir, test_dir, nepochs, numfiles, batchsize, lr, lr_drop_ra
             @info "New learning rate $(opt.eta)"
         end
         @info "Training epoch $(i)"
+        trainmode!(m)
         Flux.train!(loss, params(m), train_data, opt, cb = evalcb)
-
+        testmode!(m)
         test_accuracy = accuracy(test_data, m)
         #print out accuracies
         @info "Accuracy on a testing set $(test_accuracy)"

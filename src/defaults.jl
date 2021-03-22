@@ -22,7 +22,7 @@ end
 function Base.zero(::Type{SpatialFeature})
     n = Int64(0)
     N7 = SVector(n,n,n,n,n,n,n)
-    n = Float64(NaN)
+    n = Float64(0)
     N4 = SVector(n,n,n,n)
     SpatialFeature(Int64(0), n, n, n, n, n, n, n, Int8(0), Int8(0), N7, N7, N4)
 end
@@ -43,8 +43,8 @@ function spatialfeature_to_array(feature)
         push!(f,x)
     end
 
-    if maximum(isnan.(f)) == 1
-        return f
+    if any(isnan.(f) .| isinf.(f))
+        return spatialfeature_to_array(zero(SpatialFeature))
     else
         return f
     end

@@ -29,7 +29,7 @@ function generate_point_features(pc, ii::Int, radii::Array, kdtree::KDTree, weig
     point = position[ii]
 
     for radius in radii
-        neighboursidx =  inrange(kdtree, point, radius)
+        neighboursidx =  inrange(kdtree, point, radius/2.0)
     
         # Set up our features we want to calculate
         mycovariance = zeros(SMatrix{3, 3, Float64})
@@ -49,19 +49,23 @@ function generate_point_features(pc, ii::Int, radii::Array, kdtree::KDTree, weig
             w[i] = weight(norm(sp)^2)
             totalweight += w[i]
             mycovariance += w[i] * sp * sp'
-            logintensityμ += w[i] * log(pc.intensity[j])
+            logintensityμ += w[i] * log(1 + pc.intensity[j])
             i += 1
         end
 
-        logintensityμ = logintensityμ / totalweight
+        if totalweight != 0
+            logintensityμ = logintensityμ / totalweight
+        end
 
         i = 1
         for j in neighboursidx
-            logintensityσ² += w[i] * (log(pc.intensity[j]) - logintensityμ)^2
+            logintensityσ² += w[i] * (log(1 + pc.intensity[j]) - logintensityμ)^2
             i += 1
         end
 
-        logintensityσ² = logintensityσ² / totalweight
+        if totalweight != 0
+            logintensityσ² = logintensityσ² / totalweight
+        end
 
         # Calculate our local spatial information using PCA
         
